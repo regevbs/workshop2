@@ -665,7 +665,7 @@ int main(int argc, char *argv[])
         //send another round of packetsss
         for ( int k = 0; k < NUM_SOCKETS; k = k+1)
         {
-            if(testDone[k] || !gotAnswer[k])
+            if(testDone[k])
             {
                 printf("continued\n");
                 continue;
@@ -674,6 +674,8 @@ int main(int argc, char *argv[])
             {
                 allDone = false;
             }
+            if(!gotAnswer[k])
+                continue;
             if(packetCounter[k] == 0)
             {
                 if (gettimeofday(&timer, NULL)) {
