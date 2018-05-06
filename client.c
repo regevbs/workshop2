@@ -667,6 +667,7 @@ int main(int argc, char *argv[])
         {
             if(testDone[k] || !gotAnswer[k])
             {
+                printf("continued\n");
                 continue;
             }
             else 
@@ -679,17 +680,20 @@ int main(int argc, char *argv[])
                     perror("gettimeofday");
                     return 1;
                 }
+                printf("timer started on %d\n",k);
                 startTime[k] = (long) timer.tv_sec * 1000000 + (long)timer.tv_usec;
             }
             int message_type = REGULAR_MESSAGE;
             if(packetCounter[k] == numPackets[k] - 1)
             {
+                printf("last msg ofr this test %d\n",k);
                 message_type = LAST_MESSAGE_FOR_TEST;
             }
             else if (packetCounter[k] == numPackets[k])
             {
                 message_type = RAISE_SIZE;
                 messageSize[k] = 2 * messageSize[k];
+                printf("raisin size %d\n",k);
                 if(messageSize[k] > FINAL_MESSAGE_SIZE)
                 {
                     testDone[k] = true;
@@ -704,6 +708,7 @@ int main(int argc, char *argv[])
                 }
                 latency[k] = (long) timer.tv_sec * 1000000 + (long)timer.tv_usec;
                 message_type = LATENCY_TEST;
+                printf("testin latency on %d\n",k);
                 //latencyDone[k] = true;
             }
             
