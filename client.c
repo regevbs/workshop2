@@ -755,6 +755,7 @@ int main(int argc, char *argv[])
                 }
                      //do specific work according to protocol
                 int imm_data = htonl(wc[i].imm_data);
+                printf("imm_data = %d\n",imm_data);
                 if(imm_data == LAST_MESSAGE_FOR_TEST)
                 {
                     //TODO stop timer and print res 
