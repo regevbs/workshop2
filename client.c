@@ -610,17 +610,17 @@ int main(int argc, char *argv[])
                 return 1; //connect to the server
 
     }
-    context->pending = PINGPONG_RECV_WRID; //TODO understand what this does, probably sets context to recieve data
+    //context->pending = PINGPONG_RECV_WRID; //TODO understand what this does, probably sets context to recieve data
     printf("all sockets connected OMG \n");
     
     ///////////
-    for(int i = 0 ; i < NUM_SOCKETS ; i = i + 1)
+    /*for(int i = 0 ; i < NUM_SOCKETS ; i = i + 1)
     {
         if (pp_post_send(context,i,15)) { //TODO understand this
                     fprintf(stderr, "Couldn't post send\n");
                     return 1;
                 }
-    }
+    }*/
     int ret;
     int ne, i;
     struct ibv_wc wc[NUM_SOCKETS];
@@ -708,7 +708,7 @@ int main(int argc, char *argv[])
             }
             
             if (pp_post_send(context,k,message_type)) { //TODO understand this
-                    fprintf(stderr, "Couldn't post send\n");
+                    fprintf(stderr, "Couldn't post sendoo\n");
                     return 1;
                 }
             gotAnswer[k] = false;
