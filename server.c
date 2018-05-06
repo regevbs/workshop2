@@ -665,7 +665,11 @@ int main(int argc, char *argv[])
     {
     //////
         allDone = true;
-        
+        for(int l = 0 ; l < NUM_SOCKETS ; l = l+1)
+        {
+            if(testDone[l] == false)
+                allDone = false;
+        }
         ne = ibv_poll_cq(pp_cq(context), NUM_SOCKETS, wc);
         if (ne < 0) {
             fprintf(stderr, "poll CQ failed %d\n", ne);
