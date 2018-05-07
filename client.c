@@ -521,7 +521,7 @@ int main(int argc, char *argv[])
     for (int i=0 ;i< NUM_SOCKETS; i = i+1)
     {
         messageSize[i] = page_size; //start with page_size messages
-        numMessages[i] = 10000; //start with 10000 iters per size of message
+        numMessages[i] = 100000; //start with 10000 iters per size of message
     }
 	enum ibv_mtu		 mtu = IBV_MTU_1024;
 	unsigned int             rx_depth = 500;
@@ -660,6 +660,7 @@ int main(int argc, char *argv[])
         messageSize[i] = INITIAL_MESSAGE_SIZE;    
         leftToSend[i] = INITIAL_MESSAGE_SIZE;
         gotAnswer[i] = true;
+        latencyDone[i] = false;
 	}
     //////
     
