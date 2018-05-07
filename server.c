@@ -721,10 +721,10 @@ int main(int argc, char *argv[])
             }
             else if(imm_data == TEST_DONE)
             {
-                if (pp_post_send(context,qpNum,TEST_DONE)) { //TODO understand this
+                /*if (pp_post_send(context,qpNum,TEST_DONE)) { //TODO understand this
                     fprintf(stderr, "Couldn't post send2\n");
                     return 1;
-                }
+                }*/
                 testDone[qpNum] = true;
             }
             else if(imm_data == LATENCY_TEST)

@@ -778,12 +778,12 @@ int main(int argc, char *argv[])
 
                 
                 }
-                else if(imm_data == TEST_DONE)
+                /*else if(imm_data == TEST_DONE)
                 {
                     testDone[qpNum] = true;
                     printf("QP %d is done.\n",qpNum);
 
-                }
+                }*/
                 else if(imm_data == LATENCY_TEST)
                 {
                     if (gettimeofday(&timer, NULL)) {
