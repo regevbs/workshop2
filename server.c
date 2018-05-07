@@ -18,7 +18,7 @@
 #include <inttypes.h>
 
 #include "pingpong.h"
-#define NUM_SOCKETS 2
+#define NUM_SOCKETS 10
 #define NUM_PACKETS 50000
 #define NUM_PACKETS_WARMUP 1000
 #define INITIAL_MESSAGE_SIZE 1
@@ -815,7 +815,7 @@ int main(int argc, char *argv[])
     }
     
     //////////
-    printf("freeing data\n");
+    //printf("freeing data\n");
    	ibv_free_device_list(dev_list);
     free(rem_dest);
 
