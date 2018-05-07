@@ -592,8 +592,8 @@ int main(int argc, char *argv[])
         my_dest[k].qpn = ((*context).qp[k])->qp_num; //gets the qp number
         my_dest[k].psn = lrand48() & 0xffffff; //randomizes the packet serial number
         inet_ntop(AF_INET6, &my_dest[k].gid, gid, sizeof gid); //changes gid to text form
-        printf("  local address:  LID 0x%04x, QPN 0x%06x, PSN 0x%06x, GID %s\n",
-               my_dest[k].lid, my_dest[k].qpn, my_dest[k].psn, gid);
+        //printf("  local address:  LID 0x%04x, QPN 0x%06x, PSN 0x%06x, GID %s\n",
+         //      my_dest[k].lid, my_dest[k].qpn, my_dest[k].psn, gid);
     }
     //Get the remote dest for my QPs
     rem_dest = pp_client_exch_dest(servername, port, my_dest); //if youre a client - exchange data with server
@@ -604,8 +604,8 @@ int main(int argc, char *argv[])
     for(int k = 0 ; k < NUM_SOCKETS; k = k + 1)
     {
       inet_ntop(AF_INET6, &rem_dest[k].gid, gid, sizeof gid);
-      printf("  remote address: LID 0x%04x, QPN 0x%06x, PSN 0x%06x, GID %s\n",
-             rem_dest[k].lid, rem_dest[k].qpn, rem_dest[k].psn, gid);
+      //printf("  remote address: LID 0x%04x, QPN 0x%06x, PSN 0x%06x, GID %s\n",
+      //       rem_dest[k].lid, rem_dest[k].qpn, rem_dest[k].psn, gid);
     }      
     //now connect all the QPs to the server
     for( int k = 0 ; k < NUM_SOCKETS; k = k+1)
@@ -616,7 +616,7 @@ int main(int argc, char *argv[])
 
     }
     //context->pending = PINGPONG_RECV_WRID; //TODO understand what this does, probably sets context to recieve data
-    printf("all sockets connected OMG \n");
+    //printf("all sockets connected OMG \n");
     
     ///////////
     /*for(int i = 0 ; i < NUM_SOCKETS ; i = i + 1)
@@ -717,7 +717,7 @@ int main(int argc, char *argv[])
                 }
                 latency[k] = (long) timer.tv_sec * 1000000 + (long)timer.tv_usec;
                 message_type = LATENCY_TEST;
-                printf("testin latency on %d\n",k);
+                //printf("testin latency on %d\n",k);
                 //latencyDone[k] = true;
             }
             
@@ -794,7 +794,7 @@ int main(int argc, char *argv[])
                     }
                     latency[qpNum] =(long) timer.tv_sec * 1000000 + (long)timer.tv_usec - latency[qpNum];
                     latencyDone[qpNum] = true;
-                    printf("qp: %d latency was done, took %ld ms\n",qpNum,((double)(latency[qpNum]))/1000.0);
+                    //printf("qp: %d latency was done, took %ld ms\n",qpNum,((double)(latency[qpNum]))/1000.0);
 
                 }
             }

@@ -227,7 +227,7 @@ static struct pingpong_dest *pp_server_exch_dest(struct pingpong_context *ctx,
 		fprintf(stderr, "Couldn't listen to port %d\n", port);
 		return NULL;
 	}
-    printf("listening for a connection\n");
+    //printf("listening for a connection\n");
 	listen(sockfd, 1);
 	connfd = accept(sockfd, NULL, NULL);
 	close(sockfd);
@@ -602,8 +602,8 @@ int main(int argc, char *argv[])
         my_dest[k].qpn = ((*context).qp[k])->qp_num; //gets the qp number
         my_dest[k].psn = lrand48() & 0xffffff; //randomizes the packet serial number
         inet_ntop(AF_INET6, &my_dest[k].gid, gid, sizeof gid); //changes gid to text form
-        printf("  local address:  LID 0x%04x, QPN 0x%06x, PSN 0x%06x, GID %s\n",
-               my_dest[k].lid, my_dest[k].qpn, my_dest[k].psn, gid);
+        //printf("  local address:  LID 0x%04x, QPN 0x%06x, PSN 0x%06x, GID %s\n",
+         //      my_dest[k].lid, my_dest[k].qpn, my_dest[k].psn, gid);
     }
     //Get the remote dest for my QPs
     //rem_dest = pp_server_exch_dest(servername, port, my_dest); //if youre a client - exchange data with server
@@ -618,8 +618,8 @@ int main(int argc, char *argv[])
     for(int k = 0 ; k < NUM_SOCKETS; k = k + 1)
     {
       inet_ntop(AF_INET6, &rem_dest[k].gid, gid, sizeof gid);
-      printf("  remote address: LID 0x%04x, QPN 0x%06x, PSN 0x%06x, GID %s\n",
-             rem_dest[k].lid, rem_dest[k].qpn, rem_dest[k].psn, gid);
+      //printf("  remote address: LID 0x%04x, QPN 0x%06x, PSN 0x%06x, GID %s\n",
+            // rem_dest[k].lid, rem_dest[k].qpn, rem_dest[k].psn, gid);
     }      
     //now connect all the QPs to the client
     for( int k = 0 ; k < NUM_SOCKETS; k = k+1)
@@ -629,7 +629,7 @@ int main(int argc, char *argv[])
                 return 1; //connect to the server
 
     }
-    printf("all sockets connected OMG \n");
+    //printf("all sockets connected OMG \n");
     /*//////////
     int ret;
     int ne, i;
