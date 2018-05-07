@@ -212,8 +212,8 @@ static struct pingpong_dest *pp_client_exch_dest(const char *servername, int por
             
 			if (!connect(sockfd, t->ai_addr, t->ai_addrlen))
             {
-                printf("sockfd = %d\n",sockfd);
-                printf("broken\n");
+                //printf("sockfd = %d\n",sockfd);
+                //printf("broken\n");
 				break;
             }
 			close(sockfd);
@@ -477,11 +477,16 @@ static int pp_post_recv(struct pingpong_context *ctx, int n,int qp_num)
 	return i;
 }
 
-static int pp_post_send(struct pingpong_context *ctx,int qp_num,int imm_data)
+static int pp_post_send(struct pingpong_context *ctx,int qp_num,int imm_data,int msgSize)
 {
+    int sizeToSend = ctx->size;
+    if(msgSize <= sizeToSend)
+    {
+        sizeToSend = msgSize;
+    }
 	struct ibv_sge list = {
 		.addr	= (uintptr_t) ctx->buf,
-		.length = ctx->size,
+		.length = sizeToSend,//ctx->size,
 		.lkey	= ctx->mr->lkey
 	};
 	struct ibv_send_wr wr = {
@@ -682,20 +687,20 @@ int main(int argc, char *argv[])
                     perror("gettimeofday");
                     return 1;
                 }
-                printf("timer started on %d\n",k);
+                //printf("timer started on %d\n",k);
                 startTime[k] = (long) timer.tv_sec * 1000000 + (long)timer.tv_usec;
             }
             int message_type = REGULAR_MESSAGE;
             if(packetCounter[k] == numPackets[k] - 1)
             {
-                printf("last msg ofr this test %d\n",k);
+                //printf("last msg ofr this test %d\n",k);
                 message_type = LAST_MESSAGE_FOR_TEST;
             }
             else if (packetCounter[k] == numPackets[k])
             {
                 message_type = RAISE_SIZE;
                 messageSize[k] = 2 * messageSize[k];
-                printf("raisin size %d\n",k);
+                //printf("raisin size %d\n",k);
                 if(messageSize[k] > FINAL_MESSAGE_SIZE)
                 {
                     testDone[k] = true;
@@ -710,11 +715,11 @@ int main(int argc, char *argv[])
                 }
                 latency[k] = (long) timer.tv_sec * 1000000 + (long)timer.tv_usec;
                 message_type = LATENCY_TEST;
-                printf("testin latency on %d\n",k);
+                //printf("testin latency on %d\n",k);
                 //latencyDone[k] = true;
             }
             
-            if (pp_post_send(context,k,message_type)) { //TODO understand this
+            if (pp_post_send(context,k,message_type,messageSize[k])) { //TODO understand this
                     fprintf(stderr, "Couldn't post sendoo\n");
                     return 1;
                 }
@@ -755,7 +760,7 @@ int main(int argc, char *argv[])
                 }
                      //do specific work according to protocol
                 int imm_data = htonl(wc[i].imm_data);
-                printf("imm_data = %d\n",imm_data);
+                //printf("imm_data = %d\n",imm_data);
                 if(imm_data == LAST_MESSAGE_FOR_TEST)
                 {
                     //TODO stop timer and print res 
@@ -768,7 +773,7 @@ int main(int argc, char *argv[])
                     int numThreads = 1;
                     endTime[qpNum] =(long) timer.tv_sec * 1000000 + (long)timer.tv_usec;
                     double lastTime = (double)(endTime[qpNum] - startTime[qpNum]);
-                    printf("qp: %d test was done, took %ld ms\n",qpNum,((double)(endTime[qpNum] - startTime[qpNum]))/1000.0);
+                    //printf("qp: %d test was done, took %ld ms\n",qpNum,((double)(endTime[qpNum] - startTime[qpNum]))/1000.0);
                     printf("%d %d %d %ld us %f msg/sec %f B/sec\n",messageSize[qpNum],numSockets,numThreads,latency[qpNum], ((double) numPackets[qpNum] * 1000000.0 / ((double) lastTime)),(1000000.0*(double)messageSize[qpNum]*(double)numPackets[qpNum])/(double)lastTime);
 
                 
@@ -776,6 +781,8 @@ int main(int argc, char *argv[])
                 else if(imm_data == TEST_DONE)
                 {
                     testDone[qpNum] = true;
+                    printf("QP %d is done.\n",qpNum);
+
                 }
                 else if(imm_data == LATENCY_TEST)
                 {
@@ -785,7 +792,7 @@ int main(int argc, char *argv[])
                     }
                     latency[qpNum] =(long) timer.tv_sec * 1000000 + (long)timer.tv_usec - latency[qpNum];
                     latencyDone[qpNum] = true;
-                    printf("qp: %d latency was done, took %ld ms\n",qpNum,((double)(latency[qpNum]))/1000.0);
+                    //printf("qp: %d latency was done, took %ld ms\n",qpNum,((double)(latency[qpNum]))/1000.0);
 
                 }
             }

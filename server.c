@@ -726,7 +726,6 @@ int main(int argc, char *argv[])
                     return 1;
                 }
                 testDone[qpNum] = true;
-                printf("QP %d is done.\n",qpNum);
             }
             else if(imm_data == LATENCY_TEST)
             {
