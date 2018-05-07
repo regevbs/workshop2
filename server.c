@@ -692,7 +692,7 @@ int main(int argc, char *argv[])
             int qpNum;
             for(qpNum = 0; qpNum < NUM_SOCKETS; qpNum = qpNum + 1)
             {
-                printf("qp checked = %d, vs recieved %d\n",my_dest[qpNum],wc[i].qp_num);
+                //printf("qp checked = %d, vs recieved %d\n",my_dest[qpNum],wc[i].qp_num);
                 if(my_dest[qpNum].qpn == wc[i].qp_num)
                     break;
             }

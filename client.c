@@ -729,14 +729,14 @@ int main(int argc, char *argv[])
         for (i = 0; i < ne; ++i) {//does what needs to be done
             if (wc[i].status != IBV_WC_SUCCESS) 
             {
-                fprintf(stderr, "Failed status \n");
+                fprintf(stderr, "Failed status %d\n", wc[i].status);
                 return 1;
             }
             //find the QP index the message was recieved in
             int qpNum;
             for(qpNum = 0; qpNum < NUM_SOCKETS; qpNum = qpNum + 1)
             {
-                printf("qp checked = %d, vs recieved %d\n",my_dest[qpNum],wc[i].qp_num);
+                //printf("qp checked = %d, vs recieved %d\n",my_dest[qpNum],wc[i].qp_num);
                 if(my_dest[qpNum].qpn == wc[i].qp_num)
                     break;
             }
