@@ -774,7 +774,7 @@ int main(int argc, char *argv[])
                     endTime[qpNum] =(long) timer.tv_sec * 1000000 + (long)timer.tv_usec;
                     double lastTime = (double)(endTime[qpNum] - startTime[qpNum]);
                     //printf("qp: %d test was done, took %ld ms\n",qpNum,((double)(endTime[qpNum] - startTime[qpNum]))/1000.0);
-                    printf("%d %d %d %ld us %f msg/sec %f B/sec\n",messageSize[qpNum],numSockets,numThreads,latency[qpNum], ((double) numPackets[qpNum] * 1000000.0 / ((double) lastTime)),(1000000.0*(double)messageSize[qpNum]*(double)numPackets[qpNum])/(double)lastTime);
+                    printf("%d %d %d %ld us %f msg/sec %f MB/sec\n",messageSize[qpNum],numSockets,numThreads,latency[qpNum], ((double) numPackets[qpNum] * 1000000.0 / ((double) lastTime)),(1000000.0*(double)messageSize[qpNum]*(double)numPackets[qpNum])/(1000000.0*(double)lastTime));
 
                 
                 }
@@ -792,7 +792,7 @@ int main(int argc, char *argv[])
                     }
                     latency[qpNum] =(long) timer.tv_sec * 1000000 + (long)timer.tv_usec - latency[qpNum];
                     latencyDone[qpNum] = true;
-                    //printf("qp: %d latency was done, took %ld ms\n",qpNum,((double)(latency[qpNum]))/1000.0);
+                    printf("qp: %d latency was done, took %ld ms\n",qpNum,((double)(latency[qpNum]))/1000.0);
 
                 }
             }

@@ -709,7 +709,7 @@ int main(int argc, char *argv[])
             if(imm_data == LAST_MESSAGE_FOR_TEST)
             {
                 if (pp_post_send(context,qpNum,LAST_MESSAGE_FOR_TEST)) { //TODO understand this
-                    fprintf(stderr, "Couldn't post send\n");
+                    fprintf(stderr, "Couldn't post send1\n");
                     return 1;
                 }
                 //printf("got lats mesg\n");
@@ -722,7 +722,7 @@ int main(int argc, char *argv[])
             else if(imm_data == TEST_DONE)
             {
                 if (pp_post_send(context,qpNum,TEST_DONE)) { //TODO understand this
-                    fprintf(stderr, "Couldn't post send\n");
+                    fprintf(stderr, "Couldn't post send2\n");
                     return 1;
                 }
                 testDone[qpNum] = true;
@@ -731,7 +731,7 @@ int main(int argc, char *argv[])
             {
                 //printf("got latency\n");
                 if (pp_post_send(context,qpNum,LATENCY_TEST)) { //TODO understand this
-                    fprintf(stderr, "Couldn't post send\n");
+                    fprintf(stderr, "Couldn't post send3\n");
                     return 1;
                 }
             }
