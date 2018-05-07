@@ -734,11 +734,11 @@ int main(int argc, char *argv[])
             return 1;
         }
         for (i = 0; i < ne; ++i) {//does what needs to be done
-            if (wc[i].status != IBV_WC_SUCCESS) 
+            /*if (wc[i].status != IBV_WC_SUCCESS) 
             {
                 fprintf(stderr, "Failed status %d\n", wc[i].status);
                 return 1;
-            }
+            }*/
             //find the QP index the message was recieved in
             int qpNum;
             for(qpNum = 0; qpNum < NUM_SOCKETS; qpNum = qpNum + 1)
