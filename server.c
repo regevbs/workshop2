@@ -505,7 +505,7 @@ static int pp_post_send(struct pingpong_context *ctx,int qp_num,int imm_data)
 		.num_sge    = 1,
 		.opcode     = IBV_WR_SEND_WITH_IMM,
 		.send_flags = ctx->send_flags,
-        .imm_data = imm_data,
+        .imm_data = htonl(imm_data),
 	};
 	struct ibv_send_wr *bad_wr;
 
