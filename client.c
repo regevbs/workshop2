@@ -634,7 +634,7 @@ int main(int argc, char *argv[])
     bool gotAnswer[NUM_SOCKETS];
     int packetCounter[NUM_SOCKETS];
     int numPackets[NUM_SOCKETS];
-    long lastTime[NUM_SOCKETS];
+    //long lastTime[NUM_SOCKETS];
     long thisTime[NUM_SOCKETS];
     long startTime[NUM_SOCKETS];
     long endTime[NUM_SOCKETS];
@@ -648,7 +648,7 @@ int main(int argc, char *argv[])
         //localDone[i] = false;
         packetCounter[i] = 0;
         numPackets[i] = numMessages[i];
-        lastTime[i] = 1;
+        //lastTime[i] = 1;
         thisTime[i] = 100;
         raiseNum[i] = false;
         latency[i] = 0;
@@ -764,8 +764,14 @@ int main(int argc, char *argv[])
                         perror("gettimeofday");
                         return 1;
                     }
+                    int numSockets = NUM_SOCKETS;
+                    int numThreads = 1;
                     endTime[qpNum] =(long) timer.tv_sec * 1000000 + (long)timer.tv_usec;
+                    double lastTime = (double)(endTime[qpNum] - startTime[qpNum]);
                     printf("qp: %d test was done, took %ld ms\n",qpNum,((double)(endTime[qpNum] - startTime[qpNum]))/1000.0);
+                    printf("%d %d %d %ld us %f msg/sec %f B/sec\n",messageSize[qpNum],numSockets,numThreads,latency[qpNum], ((double) numPackets[qpNum] * 1000000.0 / ((double) lastTime)),(1000000.0*(double)messageSize[qpNum]*(double)numPackets[qpNum])/(double)lastTime);
+
+                
                 }
                 else if(imm_data == TEST_DONE)
                 {
@@ -777,7 +783,7 @@ int main(int argc, char *argv[])
                         perror("gettimeofday");
                         return 1;
                     }
-                    latency[qpNum] =latency[qpNum] - (long) timer.tv_sec * 1000000 + (long)timer.tv_usec;
+                    latency[qpNum] =(long) timer.tv_sec * 1000000 + (long)timer.tv_usec - latency[qpNum];
                     latencyDone[qpNum] = true;
                     printf("qp: %d latency was done, took %ld ms\n",qpNum,((double)(latency[qpNum]))/1000.0);
 

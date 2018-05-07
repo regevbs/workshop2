@@ -712,7 +712,7 @@ int main(int argc, char *argv[])
                     fprintf(stderr, "Couldn't post send\n");
                     return 1;
                 }
-                printf("got lats mesg\n");
+                //printf("got lats mesg\n");
                 packetCounter[qpNum] = 0;
             }
             else if(imm_data == RAISE_SIZE)
@@ -726,10 +726,11 @@ int main(int argc, char *argv[])
                     return 1;
                 }
                 testDone[qpNum] = true;
+                printf("QP %d is done.\n",qpNum);
             }
             else if(imm_data == LATENCY_TEST)
             {
-                printf("got latency\n");
+                //printf("got latency\n");
                 if (pp_post_send(context,qpNum,LATENCY_TEST)) { //TODO understand this
                     fprintf(stderr, "Couldn't post send\n");
                     return 1;
