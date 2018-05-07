@@ -815,7 +815,7 @@ int main(int argc, char *argv[])
     }
     
     //////////
-    printf("freeing data");
+    printf("freeing data\n");
    	ibv_free_device_list(dev_list);
     free(rem_dest);
 

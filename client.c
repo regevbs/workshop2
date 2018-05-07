@@ -667,7 +667,7 @@ int main(int argc, char *argv[])
         {
             if(testDone[k])
             {
-                printf("continued\n");
+                //printf("continued\n");
                 continue;
             }
             else 
