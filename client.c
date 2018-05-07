@@ -239,12 +239,12 @@ static struct pingpong_dest *pp_client_exch_dest(const char *servername, int por
         //perror("oo");
        sprintf(msg, "%04x:%06x:%06x:%s", my_dest[i].lid, my_dest[i].qpn,
                                 my_dest[i].psn, gid);
-       printf(msg);
+       //printf(msg);
        if (write(sockfd, msg, sizeof msg) != sizeof msg) {
             fprintf(stderr, "Couldn't send local address\n");
             goto out;
        }
-       printf("escaped\n");
+       //printf("escaped\n");
 
         if (read(sockfd, msg, sizeof msg) != sizeof msg ||
             write(sockfd, "done", sizeof "done") != sizeof "done") {
