@@ -703,6 +703,7 @@ int main(int argc, char *argv[])
                 //printf("raisin size %d\n",k);
                 if(messageSize[k] > FINAL_MESSAGE_SIZE)
                 {
+                    messageSize[k] = messageSize[k] / 2;
                     testDone[k] = true;
                     message_type = TEST_DONE;
                 }
@@ -715,7 +716,7 @@ int main(int argc, char *argv[])
                 }
                 latency[k] = (long) timer.tv_sec * 1000000 + (long)timer.tv_usec;
                 message_type = LATENCY_TEST;
-                //printf("testin latency on %d\n",k);
+                printf("testin latency on %d\n",k);
                 //latencyDone[k] = true;
             }
             
