@@ -696,8 +696,8 @@ int main(int argc, char *argv[])
                  
                 }
                 
-                if (pp_post_send(context,k,message_type,messageSize[k])) { //TODO understand this
-                        fprintf(stderr, "Couldn't post sendoo\n");
+                if (int retval = pp_post_send(context,k,message_type,messageSize[k])) { //TODO understand this
+                        fprintf(stderr, "Couldn't post sendoo %d error %d numSocket\n",retval,k);
                         return 1;
                     }
                 gotAnswer[k] = false;
