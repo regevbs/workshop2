@@ -619,98 +619,106 @@ int main(int argc, char *argv[])
     
     //////////////
     ////framework for test
-    bool testDone[NUM_SOCKETS];
-    bool allDone = false;
-    int packetCounter[NUM_SOCKETS];
-    int numPackets[NUM_SOCKETS];
-    //int messageSize[NUM_SOCKETS];
-    for(int i = 0;i<NUM_SOCKETS;i = i+1) //Initialize all the sockets for the program
-	{
-     
-        testDone[i] = false;
-        packetCounter[i] = 0;
-        numPackets[i] = NUM_PACKETS;
-        messageSize[i] = INITIAL_MESSAGE_SIZE;    
-	}
-    //////
-    int ret;
-    int ne, i;
-    struct ibv_wc wc[NUM_SOCKETS];
-    //////////////
-    while(!allDone)
-    {
-    //////
-        allDone = true;
-        for(int l = 0 ; l < NUM_SOCKETS ; l = l+1)
+    int numSocketsToTest;
+    for (numSocketsToTest = 1;numSocketsToTest <= NUM_SOCKETS;numSocketsToTest ++)
+    {        
+        printf("testing %d sockets now.\n",numSocketsToTest);
+        if(numSocketsToTest == 2)
         {
-            if(testDone[l] == false)
-                allDone = false;
+            numSocketsToTest = NUM_SOCKETS;
         }
-        ne = ibv_poll_cq(pp_cq(context), NUM_SOCKETS, wc);
-        if (ne < 0) {
-            fprintf(stderr, "poll CQ failed %d\n", ne);
-            return 1;
+        bool testDone[numSocketsToTest];
+        bool allDone = false;
+        int packetCounter[numSocketsToTest];
+        int numPackets[numSocketsToTest];
+        //int messageSize[numSocketsToTest];
+        for(int i = 0;i<numSocketsToTest;i = i+1) //Initialize all the sockets for the program
+        {
+         
+            testDone[i] = false;
+            packetCounter[i] = 0;
+            numPackets[i] = NUM_PACKETS;
+            messageSize[i] = INITIAL_MESSAGE_SIZE;    
         }
-        
-        for (i = 0; i < ne; ++i) {//does what needs to be done with these WCs
-            if (wc[i].status != IBV_WC_SUCCESS) 
+        //////
+        int ret;
+        int ne, i;
+        struct ibv_wc wc[numSocketsToTest];
+        //////////////
+        while(!allDone)
+        {
+        //////
+            allDone = true;
+            for(int l = 0 ; l < numSocketsToTest ; l = l+1)
             {
-                fprintf(stderr, "Failed status \n");
-                return 1;
+                if(testDone[l] == false)
+                    allDone = false;
             }
-            if ((int)wc[i].wr_id == PINGPONG_SEND_WRID)
-            {
-                continue;
+            ne = ibv_poll_cq(pp_cq(context), numSocketsToTest, wc);
+            if (ne < 0) {
+                fprintf(stderr, "poll CQ failed %d\n", ne);
+                return 1;
             }
             
-            //find the QP index the message was recieved in
-            int qpNum;
-            for(qpNum = 0; qpNum < NUM_SOCKETS; qpNum = qpNum + 1)
-            {
-                if(my_dest[qpNum].qpn == wc[i].qp_num)
-                    break;
-            }
-            //do trivial work since you recv a message.
-            packetCounter[qpNum] = packetCounter[qpNum] + 1;
-            //post recv
-            routs[qpNum] = routs[qpNum] -1 + pp_post_recv(context, 1,qpNum); //post rx_depth recieve requests
-            if (routs[qpNum] < context->rx_depth) {
-                fprintf(stderr, "Couldn't post receive (%d)\n", routs[qpNum]);
-                return 1;
-            }
-            //do specific work according to protocol
-            int imm_data = htonl(wc[i].imm_data);
-            if(imm_data == LAST_MESSAGE_FOR_TEST)
-            {
-                if (pp_post_send(context,qpNum,LAST_MESSAGE_FOR_TEST)) { //TODO understand this
-                    fprintf(stderr, "Couldn't post send1\n");
+            for (i = 0; i < ne; ++i) {//does what needs to be done with these WCs
+                if (wc[i].status != IBV_WC_SUCCESS) 
+                {
+                    fprintf(stderr, "Failed status \n");
                     return 1;
                 }
-                packetCounter[qpNum] = 0;
-            }
-            else if(imm_data == RAISE_SIZE)
-            {
-                messageSize[qpNum] = 2 * messageSize[qpNum];
-            }
-            else if(imm_data == TEST_DONE)
-            {
+                if ((int)wc[i].wr_id == PINGPONG_SEND_WRID)
+                {
+                    continue;
+                }
                 
-                testDone[qpNum] = true;
-            }
-            else if(imm_data == LATENCY_TEST)
-            {
-                if (pp_post_send(context,qpNum,LATENCY_TEST)) { //TODO understand this
-                    fprintf(stderr, "Couldn't post send3\n");
+                //find the QP index the message was recieved in
+                int qpNum;
+                for(qpNum = 0; qpNum < numSocketsToTest; qpNum = qpNum + 1)
+                {
+                    if(my_dest[qpNum].qpn == wc[i].qp_num)
+                        break;
+                }
+                //do trivial work since you recv a message.
+                packetCounter[qpNum] = packetCounter[qpNum] + 1;
+                //post recv
+                routs[qpNum] = routs[qpNum] -1 + pp_post_recv(context, 1,qpNum); //post rx_depth recieve requests
+                if (routs[qpNum] < context->rx_depth) {
+                    fprintf(stderr, "Couldn't post receive (%d)\n", routs[qpNum]);
                     return 1;
                 }
+                //do specific work according to protocol
+                int imm_data = htonl(wc[i].imm_data);
+                if(imm_data == LAST_MESSAGE_FOR_TEST)
+                {
+                    if (pp_post_send(context,qpNum,LAST_MESSAGE_FOR_TEST)) { //TODO understand this
+                        fprintf(stderr, "Couldn't post send1\n");
+                        return 1;
+                    }
+                    packetCounter[qpNum] = 0;
+                }
+                else if(imm_data == RAISE_SIZE)
+                {
+                    messageSize[qpNum] = 2 * messageSize[qpNum];
+                }
+                else if(imm_data == TEST_DONE)
+                {
+                    
+                    testDone[qpNum] = true;
+                }
+                else if(imm_data == LATENCY_TEST)
+                {
+                    if (pp_post_send(context,qpNum,LATENCY_TEST)) { //TODO understand this
+                        fprintf(stderr, "Couldn't post send3\n");
+                        return 1;
+                    }
+                }
+                
+                
             }
             
-            
+      
         }
-        
-  
     }
-    
     //////////
    	ibv_free_device_list(dev_list);
     free(rem_dest);

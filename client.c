@@ -599,176 +599,183 @@ int main(int argc, char *argv[])
                 return 1; //connect to the server
 
     }
-    
-    int ret;
-    int ne, i;
-    struct ibv_wc wc[NUM_SOCKETS];
-    /////////////////////////////////////////////////////
-    
-    ////framework for test
-    bool testDone[NUM_SOCKETS];
-    bool latencyDone[NUM_SOCKETS];
-    bool raiseNum[NUM_SOCKETS];
-    bool allDone = false;
-    bool gotAnswer[NUM_SOCKETS];
-    int packetCounter[NUM_SOCKETS];
-    int numPackets[NUM_SOCKETS];
-    //long lastTime[NUM_SOCKETS];
-    long thisTime[NUM_SOCKETS];
-    long startTime[NUM_SOCKETS];
-    long endTime[NUM_SOCKETS];
-    long latency[NUM_SOCKETS];
-    //int messageSize[NUM_SOCKETS];
-    int leftToSend[NUM_SOCKETS];
-    for(int i = 0;i<NUM_SOCKETS;i = i+1) //Initialize all the sockets for the program
-	{
-     
-        testDone[i] = false;
-        packetCounter[i] = 0;
-        numPackets[i] = numMessages[i];
-        //lastTime[i] = 1;
-        thisTime[i] = 100;
-        raiseNum[i] = false;
-        latency[i] = 0;
-        messageSize[i] = INITIAL_MESSAGE_SIZE;    
-        leftToSend[i] = INITIAL_MESSAGE_SIZE;
-        gotAnswer[i] = true;
-        latencyDone[i] = false;
-	}
-    //////
     sleep(5);
-    while(!allDone)
-    {
-    //////
-        allDone = true;
-        //send another round of packetsss
-        for ( int k = 0; k < NUM_SOCKETS; k = k+1)
+    int numSocketsToTest;
+    for (numSocketsToTest = 1;numSocketsToTest <= NUM_SOCKETS;numSocketsToTest ++)
+    {        
+        printf("testing %d sockets now.\n",numSocketsToTest);
+        if(numSocketsToTest == 2)
         {
-            if(testDone[k])
+            numSocketsToTest = NUM_SOCKETS;
+        }
+        int ret;
+        int ne, i;
+        struct ibv_wc wc[numSocketsToTest];
+        /////////////////////////////////////////////////////
+        
+        ////framework for test
+        bool testDone[numSocketsToTest];
+        bool latencyDone[numSocketsToTest];
+        bool raiseNum[numSocketsToTest];
+        bool allDone = false;
+        bool gotAnswer[numSocketsToTest];
+        int packetCounter[numSocketsToTest];
+        int numPackets[numSocketsToTest];
+        //long lastTime[numSocketsToTest];
+        long thisTime[numSocketsToTest];
+        long startTime[numSocketsToTest];
+        long endTime[numSocketsToTest];
+        long latency[numSocketsToTest];
+        //int messageSize[numSocketsToTest];
+        int leftToSend[numSocketsToTest];
+        for(int i = 0;i<numSocketsToTest;i = i+1) //Initialize all the sockets for the program
+        {
+         
+            testDone[i] = false;
+            packetCounter[i] = 0;
+            numPackets[i] = numMessages[i];
+            //lastTime[i] = 1;
+            thisTime[i] = 100;
+            raiseNum[i] = false;
+            latency[i] = 0;
+            messageSize[i] = INITIAL_MESSAGE_SIZE;    
+            leftToSend[i] = INITIAL_MESSAGE_SIZE;
+            gotAnswer[i] = true;
+            latencyDone[i] = false;
+        }
+        //////
+        while(!allDone)
+        {
+        //////
+            allDone = true;
+            //send another round of packetsss
+            for ( int k = 0; k < numSocketsToTest; k = k+1)
             {
-                continue;
-            }
-            else 
-            {
-                allDone = false;
-            }
-            if(!gotAnswer[k])
-                continue;
-            if(packetCounter[k] == 0)
-            {
-                if (gettimeofday(&timer, NULL)) {
+                if(testDone[k])
+                {
+                    continue;
+                }
+                else 
+                {
+                    allDone = false;
+                }
+                if(!gotAnswer[k])
+                    continue;
+                if(packetCounter[k] == 0)
+                {
+                    if (gettimeofday(&timer, NULL)) {
+                        perror("gettimeofday");
+                        return 1;
+                    }
+                    startTime[k] = (long) timer.tv_sec * 1000000 + (long)timer.tv_usec;
+                }
+                int message_type = REGULAR_MESSAGE;
+                if(packetCounter[k] == numPackets[k] - 1)
+                {
+                    message_type = LAST_MESSAGE_FOR_TEST;
+                }
+                else if (packetCounter[k] == numPackets[k])
+                {
+                    message_type = RAISE_SIZE;
+                    messageSize[k] = 2 * messageSize[k];
+                    if(messageSize[k] > FINAL_MESSAGE_SIZE)
+                    {
+                        messageSize[k] = messageSize[k] / 2;
+                        testDone[k] = true;
+                        message_type = TEST_DONE;
+                    }
+                }
+                else if (!latencyDone[k] && packetCounter[k] == NUM_PACKETS_WARMUP)
+                {
+                    if (gettimeofday(&timer, NULL)) {
                     perror("gettimeofday");
                     return 1;
+                    }
+                    latency[k] = (long) timer.tv_sec * 1000000 + (long)timer.tv_usec;
+                    message_type = LATENCY_TEST;
+                 
                 }
-                startTime[k] = (long) timer.tv_sec * 1000000 + (long)timer.tv_usec;
+                
+                if (pp_post_send(context,k,message_type,messageSize[k])) { //TODO understand this
+                        fprintf(stderr, "Couldn't post sendoo\n");
+                        return 1;
+                    }
+                gotAnswer[k] = false;
             }
-            int message_type = REGULAR_MESSAGE;
-            if(packetCounter[k] == numPackets[k] - 1)
-            {
-                message_type = LAST_MESSAGE_FOR_TEST;
-            }
-            else if (packetCounter[k] == numPackets[k])
-            {
-                message_type = RAISE_SIZE;
-                messageSize[k] = 2 * messageSize[k];
-                if(messageSize[k] > FINAL_MESSAGE_SIZE)
-                {
-                    messageSize[k] = messageSize[k] / 2;
-                    testDone[k] = true;
-                    message_type = TEST_DONE;
-                }
-            }
-            else if (!latencyDone[k] && packetCounter[k] == NUM_PACKETS_WARMUP)
-            {
-                if (gettimeofday(&timer, NULL)) {
-                perror("gettimeofday");
+            //do what needs to be done with work completes 
+            ne = ibv_poll_cq(pp_cq(context), numSocketsToTest, wc);
+            if (ne < 0) {
+                fprintf(stderr, "poll CQ failed %d\n", ne);
                 return 1;
-                }
-                latency[k] = (long) timer.tv_sec * 1000000 + (long)timer.tv_usec;
-                message_type = LATENCY_TEST;
-             
             }
+            for (i = 0; i < ne; ++i) {//does what needs to be done
+                if (wc[i].status != IBV_WC_SUCCESS) 
+                {
+                    fprintf(stderr, "Failed status %d\n", wc[i].status);
+                    return 1;
+                }
+                //find the QP index the message was recieved in
+                int qpNum;
+                for(qpNum = 0; qpNum < numSocketsToTest; qpNum = qpNum + 1)
+                {
+                    if(my_dest[qpNum].qpn == wc[i].qp_num)
+                        break;
+                }
+                if ((int)wc[i].wr_id == PINGPONG_SEND_WRID)
+                {
+                    packetCounter[qpNum] = packetCounter[qpNum] + 1;
+                    gotAnswer[qpNum] = true;
+                }
+                else if((int)wc[i].wr_id == PINGPONG_RECV_WRID)//this is a recv operation completed.
+                {
+                    //post recv
+                    routs[qpNum] = routs[qpNum] -1 + pp_post_recv(context, 1,qpNum); //post rx_depth recieve requests
+                    if (routs[qpNum] < context->rx_depth) {
+                        fprintf(stderr, "Couldn't post receive (%d)\n", routs[qpNum]);
+                        return 1;
+                    }
+                         //do specific work according to protocol
+                    int imm_data = htonl(wc[i].imm_data);
+                    //printf("imm_data = %d\n",imm_data);
+                    if(imm_data == LAST_MESSAGE_FOR_TEST)
+                    {
+                        //TODO stop timer and print res 
+                        packetCounter[qpNum] = 0;
+                        if (gettimeofday(&timer, NULL)) {
+                            perror("gettimeofday");
+                            return 1;
+                        }
+                        int numSockets = numSocketsToTest;
+                        int numThreads = 1;
+                        endTime[qpNum] =(long) timer.tv_sec * 1000000 + (long)timer.tv_usec;
+                        double lastTime = (double)(endTime[qpNum] - startTime[qpNum]);
+                        //printf("qp: %d test was done, took %ld ms\n",qpNum,((double)(endTime[qpNum] - startTime[qpNum]))/1000.0);
+                        printf("%d %d %d %ld us %f msg/sec %f MB/sec\n",messageSize[qpNum],numSockets,numThreads,latency[qpNum], ((double) numPackets[qpNum] * 1000000.0 / ((double) lastTime)),(1000000.0*(double)messageSize[qpNum]*(double)numPackets[qpNum])/(1000000.0*(double)lastTime));
+
+                    
+                    }
+                    
+                    else if(imm_data == LATENCY_TEST)
+                    {
+                        if (gettimeofday(&timer, NULL)) {
+                            perror("gettimeofday");
+                            return 1;
+                        }
+                        latency[qpNum] =(long) timer.tv_sec * 1000000 + (long)timer.tv_usec - latency[qpNum];
+                        latencyDone[qpNum] = true;
+
+                    }
+                }
+                else
+                {
+                    perror("failed send or recv ><");
+                    return 1;
+                }
             
-            if (pp_post_send(context,k,message_type,messageSize[k])) { //TODO understand this
-                    fprintf(stderr, "Couldn't post sendoo\n");
-                    return 1;
-                }
-            gotAnswer[k] = false;
+            }
+               
         }
-        //do what needs to be done with work completes 
-        ne = ibv_poll_cq(pp_cq(context), NUM_SOCKETS, wc);
-        if (ne < 0) {
-            fprintf(stderr, "poll CQ failed %d\n", ne);
-            return 1;
-        }
-        for (i = 0; i < ne; ++i) {//does what needs to be done
-            if (wc[i].status != IBV_WC_SUCCESS) 
-            {
-                fprintf(stderr, "Failed status %d\n", wc[i].status);
-                return 1;
-            }
-            //find the QP index the message was recieved in
-            int qpNum;
-            for(qpNum = 0; qpNum < NUM_SOCKETS; qpNum = qpNum + 1)
-            {
-                if(my_dest[qpNum].qpn == wc[i].qp_num)
-                    break;
-            }
-            if ((int)wc[i].wr_id == PINGPONG_SEND_WRID)
-            {
-                packetCounter[qpNum] = packetCounter[qpNum] + 1;
-                gotAnswer[qpNum] = true;
-            }
-            else if((int)wc[i].wr_id == PINGPONG_RECV_WRID)//this is a recv operation completed.
-            {
-                //post recv
-                routs[qpNum] = routs[qpNum] -1 + pp_post_recv(context, 1,qpNum); //post rx_depth recieve requests
-                if (routs[qpNum] < context->rx_depth) {
-                    fprintf(stderr, "Couldn't post receive (%d)\n", routs[qpNum]);
-                    return 1;
-                }
-                     //do specific work according to protocol
-                int imm_data = htonl(wc[i].imm_data);
-                //printf("imm_data = %d\n",imm_data);
-                if(imm_data == LAST_MESSAGE_FOR_TEST)
-                {
-                    //TODO stop timer and print res 
-                    packetCounter[qpNum] = 0;
-                    if (gettimeofday(&timer, NULL)) {
-                        perror("gettimeofday");
-                        return 1;
-                    }
-                    int numSockets = NUM_SOCKETS;
-                    int numThreads = 1;
-                    endTime[qpNum] =(long) timer.tv_sec * 1000000 + (long)timer.tv_usec;
-                    double lastTime = (double)(endTime[qpNum] - startTime[qpNum]);
-                    //printf("qp: %d test was done, took %ld ms\n",qpNum,((double)(endTime[qpNum] - startTime[qpNum]))/1000.0);
-                    printf("%d %d %d %ld us %f msg/sec %f MB/sec\n",messageSize[qpNum],numSockets,numThreads,latency[qpNum], ((double) numPackets[qpNum] * 1000000.0 / ((double) lastTime)),(1000000.0*(double)messageSize[qpNum]*(double)numPackets[qpNum])/(1000000.0*(double)lastTime));
-
-                
-                }
-                
-                else if(imm_data == LATENCY_TEST)
-                {
-                    if (gettimeofday(&timer, NULL)) {
-                        perror("gettimeofday");
-                        return 1;
-                    }
-                    latency[qpNum] =(long) timer.tv_sec * 1000000 + (long)timer.tv_usec - latency[qpNum];
-                    latencyDone[qpNum] = true;
-
-                }
-            }
-            else
-            {
-                perror("failed send or recv ><");
-                return 1;
-            }
-        
-        }
-           
     }
-    
     ////////////////////////////////////////////////////
    
    	ibv_free_device_list(dev_list);
