@@ -34,10 +34,8 @@ typedef int bool;
 #define false 0
 
 static int page_size;
-//static int use_odp;
 static int use_ts;
-//static int validate_buf;
-//static int use_dm;
+
 
 struct pingpong_context {
 	struct ibv_context	*context; //the connection context (channels live inside the context)
@@ -205,26 +203,21 @@ static struct pingpong_dest *pp_client_exch_dest(const char *servername, int por
 	}
 
 	for (t = res; t; t = t->ai_next) {
-    //printf("wak");
 		sockfd = socket(t->ai_family, t->ai_socktype, t->ai_protocol);
 		if (sockfd >= 0) {
             sleep(1);
             
 			if (!connect(sockfd, t->ai_addr, t->ai_addrlen))
             {
-                //printf("sockfd = %d\n",sockfd);
-                //printf("broken\n");
+               
 				break;
             }
 			close(sockfd);
 			sockfd = -1;
 		}
 	}
-  //printf("wa");
 	freeaddrinfo(res);
-  //printf("wawa");
 	free(service);
-  //printf("wawawa");
   
 	if (sockfd < 0) {
 		fprintf(stderr, "Couldn't connect to %s:%d\n", servername, port);
@@ -236,15 +229,12 @@ static struct pingpong_dest *pp_client_exch_dest(const char *servername, int por
     for (int i = 0; i < NUM_SOCKETS; i = i+1)
     {//
         gid_to_wire_gid(&((my_dest[i]).gid), gid);
-        //perror("oo");
        sprintf(msg, "%04x:%06x:%06x:%s", my_dest[i].lid, my_dest[i].qpn,
                                 my_dest[i].psn, gid);
-       //printf(msg);
        if (write(sockfd, msg, sizeof msg) != sizeof msg) {
             fprintf(stderr, "Couldn't send local address\n");
             goto out;
        }
-       //printf("escaped\n");
 
         if (read(sockfd, msg, sizeof msg) != sizeof msg ||
             write(sockfd, "done", sizeof "done") != sizeof "done") {
@@ -385,7 +375,6 @@ clean_mr:
 
 clean_dm:
 	if (ctx->dm)
-		//ibv_free_dm(ctx->dm);
 
 clean_pd:
 	ibv_dealloc_pd(ctx->pd);
@@ -426,10 +415,6 @@ static int pp_close_ctx(struct pingpong_context *ctx)
 	}
 
 	if (ctx->dm) {
-		//if (ibv_free_dm(ctx->dm)) {
-		//	fprintf(stderr, "Couldn't free DM\n");
-		//	return 1;
-		//}
 	}
 
 	if (ibv_dealloc_pd(ctx->pd)) {
@@ -615,17 +600,7 @@ int main(int argc, char *argv[])
                 return 1; //connect to the server
 
     }
-    //context->pending = PINGPONG_RECV_WRID; //TODO understand what this does, probably sets context to recieve data
-    //printf("all sockets connected OMG \n");
     
-    ///////////
-    /*for(int i = 0 ; i < NUM_SOCKETS ; i = i + 1)
-    {
-        if (pp_post_send(context,i,15)) { //TODO understand this
-                    fprintf(stderr, "Couldn't post send\n");
-                    return 1;
-                }
-    }*/
     int ret;
     int ne, i;
     struct ibv_wc wc[NUM_SOCKETS];
@@ -650,7 +625,6 @@ int main(int argc, char *argv[])
 	{
      
         testDone[i] = false;
-        //localDone[i] = false;
         packetCounter[i] = 0;
         numPackets[i] = numMessages[i];
         //lastTime[i] = 1;
@@ -673,7 +647,6 @@ int main(int argc, char *argv[])
         {
             if(testDone[k])
             {
-                //printf("continued\n");
                 continue;
             }
             else 
@@ -688,20 +661,17 @@ int main(int argc, char *argv[])
                     perror("gettimeofday");
                     return 1;
                 }
-                //printf("timer started on %d\n",k);
                 startTime[k] = (long) timer.tv_sec * 1000000 + (long)timer.tv_usec;
             }
             int message_type = REGULAR_MESSAGE;
             if(packetCounter[k] == numPackets[k] - 1)
             {
-                //printf("last msg ofr this test %d\n",k);
                 message_type = LAST_MESSAGE_FOR_TEST;
             }
             else if (packetCounter[k] == numPackets[k])
             {
                 message_type = RAISE_SIZE;
                 messageSize[k] = 2 * messageSize[k];
-                //printf("raisin size %d\n",k);
                 if(messageSize[k] > FINAL_MESSAGE_SIZE)
                 {
                     messageSize[k] = messageSize[k] / 2;
@@ -717,8 +687,7 @@ int main(int argc, char *argv[])
                 }
                 latency[k] = (long) timer.tv_sec * 1000000 + (long)timer.tv_usec;
                 message_type = LATENCY_TEST;
-                //printf("testin latency on %d\n",k);
-                //latencyDone[k] = true;
+             
             }
             
             if (pp_post_send(context,k,message_type,messageSize[k])) { //TODO understand this
@@ -743,7 +712,6 @@ int main(int argc, char *argv[])
             int qpNum;
             for(qpNum = 0; qpNum < NUM_SOCKETS; qpNum = qpNum + 1)
             {
-                //printf("qp checked = %d, vs recieved %d\n",my_dest[qpNum],wc[i].qp_num);
                 if(my_dest[qpNum].qpn == wc[i].qp_num)
                     break;
             }
@@ -780,12 +748,7 @@ int main(int argc, char *argv[])
 
                 
                 }
-                /*else if(imm_data == TEST_DONE)
-                {
-                    testDone[qpNum] = true;
-                    printf("QP %d is done.\n",qpNum);
-
-                }*/
+                
                 else if(imm_data == LATENCY_TEST)
                 {
                     if (gettimeofday(&timer, NULL)) {
@@ -794,7 +757,6 @@ int main(int argc, char *argv[])
                     }
                     latency[qpNum] =(long) timer.tv_sec * 1000000 + (long)timer.tv_usec - latency[qpNum];
                     latencyDone[qpNum] = true;
-                    //printf("qp: %d latency was done, took %ld ms\n",qpNum,((double)(latency[qpNum]))/1000.0);
 
                 }
             }
@@ -805,103 +767,11 @@ int main(int argc, char *argv[])
             }
         
         }
-            //send recieve logic
-            //rcnt[k] = scnt[k] = 0;
-            /*
-            if (rcnt[k] < iters[k] || scnt[k] < iters[k]) {
-                    if(rcnt[k] == 0)
-                    {
-                        startTime[k] = (long) start[k].tv_sec * 1000000 + (long)start[k].tv_usec;
-                    }
-                    int ret;
-                    int ne, i;
-                    struct ibv_wc wc[2];
-
-                    //do {//loop until we have a work completions
-                        ne = ibv_poll_cq(pp_cq(contexts[k]), 2, wc);
-                        if (ne < 0) {
-                            fprintf(stderr, "poll CQ failed %d\n", ne);
-                            return 1;
-                    //    }
-                    //} while (!use_event && ne < 1);
-
-                    for (i = 0; i < ne; ++i) {//does what needs to be done with these WCs
-                        ret = parse_single_wc(contexts[k], &scnt[k], &rcnt[k], &routs[k],
-                                      iters[k],
-                                      wc[i].wr_id,
-                                      wc[i].status,
-                                      0, &ts);
-                        if (ret) {
-                            fprintf(stderr, "parse WC failed %d\n", ne);
-                            return 1;
-                        }
-                    }
-                //}
-            }
-            else //done packets for this test, measure time
-            {
-                if (gettimeofday(&end[k], NULL)) {
-                perror("gettimeofday");
-                return 1;
-                }
-                endTime[k] = (long) end[k].tv_sec * 1000000 + (long)end[k].tv_usec;
-                //localDone[k] = true;
-                lastTime[k] = thisTime[k];
-                thisTime[k] = endTime[k] - startTime[k];
-                //TODO print result
-                printf("test %d done, time: %ld\n",k,thisTime[k]);
-                //raise message size
-                size[k] = 2*size[k];
-                lastTime[k] = 1;
-                thisTime[k] = 100;
-                rcnt[k] = 0;
-                scnt[k] = 0;
-                if(size[k] > FINAL_MESSAGE_SIZE)
-                {
-                    testDone[k] = true;
-                    if (pp_close_ctx(contexts[k]))
-                        return 1;
-                    continue;
-                }
-            }
-            
-            //time calculation
-
-            if(false)//TODO decide what to do with this code
-            {
-                float usec = (end[k].tv_sec - start[k].tv_sec) * 1000000 +
-                    (end[k].tv_usec - start[k].tv_usec);
-                long long bytes = (long long) size[k] * iters[k] * 2;
-
-                printf("%lld bytes in %.2f seconds = %.2f Mbit/sec\n",
-                       bytes, usec / 1000000., bytes * 8. / usec);
-                printf("%d iters in %.2f seconds = %.2f usec/iter\n",
-                       iters[k], usec / 1000000., usec / iters[k]);
-
-                if ((!servername) && (validate_buf)) {
-                    
-                    for (int i = 0; i < size[k]; i += page_size)
-                        if (contexts[k]->buf[i] != i / page_size % sizeof(char))
-                            printf("invalid data in page %d\n",
-                                   i / page_size);
-                }
-            }
-
-            //ibv_ack_cq_events(pp_cq(contexts[k]), num_cq_events[k]);
-
-            
-        }*/
+           
     }
     
     ////////////////////////////////////////////////////
-    //do {//loop until we have a work completions
-    sleep(1);
-    //ne = ibv_poll_cq(pp_cq(context), 2, wc);
-    //printf("we have %d completion messages waiting!!!",ne);
-    //printf("imm data is: %d and %d\n", wc[0].qp_num,wc[1].qp_num);
-    /////////////
-    
-    //printf("freeing data");
+   
    	ibv_free_device_list(dev_list);
     free(rem_dest);
 

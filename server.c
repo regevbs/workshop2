@@ -227,7 +227,6 @@ static struct pingpong_dest *pp_server_exch_dest(struct pingpong_context *ctx,
 		fprintf(stderr, "Couldn't listen to port %d\n", port);
 		return NULL;
 	}
-    //printf("listening for a connection\n");
 	listen(sockfd, 1);
 	connfd = accept(sockfd, NULL, NULL);
 	close(sockfd);
@@ -252,14 +251,6 @@ static struct pingpong_dest *pp_server_exch_dest(struct pingpong_context *ctx,
         sscanf(msg, "%x:%x:%x:%s", &rem_dest[i].lid, &rem_dest[i].qpn,
                                 &rem_dest[i].psn, gid);
         wire_gid_to_gid(gid, &rem_dest[i].gid);
-/*
-	if (pp_connect_ctx(ctx, ib_port, my_dest->psn, mtu, sl, rem_dest,
-								sgid_idx)) {
-		fprintf(stderr, "Couldn't connect to remote QP\n");
-		free(rem_dest);
-		rem_dest = NULL;
-		goto out;
-	}*/
 
 
         gid_to_wire_gid(&my_dest->gid, gid);
@@ -441,10 +432,7 @@ static int pp_close_ctx(struct pingpong_context *ctx)
 	}
 
 	if (ctx->dm) {
-		//if (ibv_free_dm(ctx->dm)) {
-		//	fprintf(stderr, "Couldn't free DM\n");
-		//	return 1;
-		//}
+		
 	}
 
 	if (ibv_dealloc_pd(ctx->pd)) {
@@ -606,7 +594,6 @@ int main(int argc, char *argv[])
          //      my_dest[k].lid, my_dest[k].qpn, my_dest[k].psn, gid);
     }
     //Get the remote dest for my QPs
-    //rem_dest = pp_server_exch_dest(servername, port, my_dest); //if youre a client - exchange data with server
     
     rem_dest = pp_server_exch_dest(context, ib_port, mtu, port, sl, //if youre a server - exchange data with client
                                     my_dest, gidx);
@@ -629,18 +616,7 @@ int main(int argc, char *argv[])
                 return 1; //connect to the server
 
     }
-    //printf("all sockets connected OMG \n");
-    /*//////////
-    int ret;
-    int ne, i;
-    struct ibv_wc wc[2];
-
-    //do {//loop until we have a work completions
-    ne = ibv_poll_cq(pp_cq(context), 2, wc);
-    printf("we have %d messages waiting!!!\n",ne);
-    printf("%d",wc[0].wc_flags);
-    printf("\nimm data is: %d and %d\n", htonl(wc[0].imm_data),ntohl(wc[1].imm_data));
-*/
+    
     //////////////
     ////framework for test
     bool testDone[NUM_SOCKETS];
@@ -675,7 +651,6 @@ int main(int argc, char *argv[])
             fprintf(stderr, "poll CQ failed %d\n", ne);
             return 1;
         }
-        //} while (!use_event && ne < 1);
         
         for (i = 0; i < ne; ++i) {//does what needs to be done with these WCs
             if (wc[i].status != IBV_WC_SUCCESS) 
@@ -692,7 +667,6 @@ int main(int argc, char *argv[])
             int qpNum;
             for(qpNum = 0; qpNum < NUM_SOCKETS; qpNum = qpNum + 1)
             {
-                //printf("qp checked = %d, vs recieved %d\n",my_dest[qpNum],wc[i].qp_num);
                 if(my_dest[qpNum].qpn == wc[i].qp_num)
                     break;
             }
@@ -712,7 +686,6 @@ int main(int argc, char *argv[])
                     fprintf(stderr, "Couldn't post send1\n");
                     return 1;
                 }
-                //printf("got lats mesg\n");
                 packetCounter[qpNum] = 0;
             }
             else if(imm_data == RAISE_SIZE)
@@ -721,101 +694,24 @@ int main(int argc, char *argv[])
             }
             else if(imm_data == TEST_DONE)
             {
-                /*if (pp_post_send(context,qpNum,TEST_DONE)) { //TODO understand this
-                    fprintf(stderr, "Couldn't post send2\n");
-                    return 1;
-                }*/
+                
                 testDone[qpNum] = true;
             }
             else if(imm_data == LATENCY_TEST)
             {
-                //printf("got latency\n");
                 if (pp_post_send(context,qpNum,LATENCY_TEST)) { //TODO understand this
                     fprintf(stderr, "Couldn't post send3\n");
                     return 1;
                 }
             }
             
-            /*ret = parse_single_wc(context, &scnt[k], &rcnt[k], &routs[k],
-                          iters[k],
-                          wc[i].wr_id,
-                          wc[i].status,
-                          0, &ts);
-            if (ret) {
-                fprintf(stderr, "parse WC failed %d\n", ne);
-                return 1;
-            }*/
+            
         }
-        /*for ( int k = 0; k < NUM_SOCKETS; k = k+1)
-        {
-            if(testDone[k]) continue;
-            if(!testDone[k]) allDone = false;    //if any of the sockets didn't finish the test yet - we keep running...
-            //
-            //send recieve logic
-            //rcnt[k] = scnt[k] = 0;
-            if (packetCounter[k] < numPackets[k]) {
-                 
-                //}
-            }
-            else //done packets for this test, measure time
-            {
-                if (gettimeofday(&end[k], NULL)) {
-                perror("gettimeofday");
-                return 1;
-                }
-                endTime[k] = (long) end[k].tv_sec * 1000000 + (long)end[k].tv_usec;
-                //localDone[k] = true;
-                lastTime[k] = thisTime[k];
-                thisTime[k] = endTime[k] - startTime[k];
-                //TODO print result
-                printf("test 1 done, time: %ld\n",thisTime[k]);
-                //raise message size
-                size[k] = 2*size[k];
-                lastTime[k] = 1;
-                thisTime[k] = 100;
-                rcnt[k] = 0;
-                scnt[k] = 0;
-                if(size[k] > FINAL_MESSAGE_SIZE)
-                {
-                    testDone[k] = true;
-                    if (pp_close_ctx(contexts[k]))
-                        return 1;
-                    continue;
-                }
-            }
-            
-            //time calculation
-
-            if(false)//TODO decide what to do with this code
-            {
-                float usec = (end[k].tv_sec - start[k].tv_sec) * 1000000 +
-                    (end[k].tv_usec - start[k].tv_usec);
-                long long bytes = (long long) size[k] * iters[k] * 2;
-
-                printf("%lld bytes in %.2f seconds = %.2f Mbit/sec\n",
-                       bytes, usec / 1000000., bytes * 8. / usec);
-                printf("%d iters in %.2f seconds = %.2f usec/iter\n",
-                       iters[k], usec / 1000000., usec / iters[k]);
-
-                if ((!servername) && (validate_buf)) {
-                    
-                    for (int i = 0; i < size[k]; i += page_size)
-                        if (contexts[k]->buf[i] != i / page_size % sizeof(char))
-                            printf("invalid data in page %d\n",
-                                   i / page_size);
-                }
-            }
-
-            //ibv_ack_cq_events(pp_cq(contexts[k]), num_cq_events[k]);
-
-            
-            }
-        }*/
+        
   
     }
     
     //////////
-    //printf("freeing data\n");
    	ibv_free_device_list(dev_list);
     free(rem_dest);
 
