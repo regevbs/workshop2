@@ -485,121 +485,8 @@ static int pp_post_send(struct pingpong_context *ctx,int qp_num,int imm_data,int
 
 	return ibv_post_send((*ctx).qp[qp_num], &wr, &bad_wr);
 }
-
-int main(int argc, char *argv[])
+int testParallelSockets(pingpong_context * context)
 {
-    
-    struct ibv_device      **dev_list;
-	struct ibv_device	*ib_dev;
-	struct pingpong_context *context;
-	struct pingpong_dest    my_dest[NUM_SOCKETS];
-	struct pingpong_dest    *rem_dest;
-	struct timeval           timer;
-	char                    *ib_devname = NULL;
-	char                    *servername = NULL;
-	unsigned int             port = 18515;
-	int                      ib_port = 1;
-	int             messageSize[NUM_SOCKETS];
-    int             numMessages[NUM_SOCKETS];
-    page_size = sysconf(_SC_PAGESIZE); //checks the page size used by the system
-    for (int i=0 ;i< NUM_SOCKETS; i = i+1)
-    {
-        messageSize[i] = page_size; //start with page_size messages
-        numMessages[i] = 100000; //start with 10000 iters per size of message
-    }
-	enum ibv_mtu		 mtu = IBV_MTU_1024;
-	unsigned int             rx_depth = 5000;
-	
-	int                      use_event = 0;
-	int                      routs[NUM_SOCKETS];
-	//int                      rcnt[NUM_SOCKETS];
-    int                      sendCount[NUM_SOCKETS];
-	int                      num_cq_events;//only one completion queue
-	int                      sl = 0;
-	int			 gidx = -1;
-	char			 gid[33];
-	//struct ts_params	 ts;
-
-	srand48(getpid() * time(NULL));
-
-    
-    //get input for the server ip and port
-    int portNum;
-    int numArgs = 3;
-    char* usageMessage = "usage %s Server IP port\n";
-	if (argc < numArgs) {
-       fprintf(stderr,usageMessage, argv[0]);
-       exit(0);
-    }
-    portNum = atoi(argv[numArgs - 1]);
-    port = portNum;
-    servername = strdupa(argv[1]);
-    
-    //get our beloved device
-    dev_list = ibv_get_device_list(NULL); //get devices available to this machine
-	if (!dev_list) {
-		perror("Failed to get IB devices list");
-		return 1;
-	}
-    ib_dev = *dev_list; //chooses the first device by default
-    if (!ib_dev) {
-        fprintf(stderr, "No IB devices found\n");
-        return 1;
-    }
-    //Create the context for this connection
-    //creates context on found device, registers memory of size.
-    context = pp_init_ctx(ib_dev, FINAL_MESSAGE_SIZE, rx_depth, ib_port, use_event); //use_event (decides if we wait blocking for completion)
-    if (!context)
-        return 1;
-    
-    if (pp_get_port_info(context->context, ib_port, &context->portinfo)) { //gets the port status and info (uses ibv_query_port)
-            fprintf(stderr, "Couldn't get port info\n");
-            return 1;
-        }
-    for ( int k = 0; k < NUM_SOCKETS ; k = k+1)
-    {
-        //Prepare to recieve messages. fill the recieve request queue of QP k
-        routs[k] = pp_post_recv(context, context->rx_depth,k); //post rx_depth recieve requests
-            if (routs[k] < context->rx_depth) {
-                fprintf(stderr, "Couldn't post receive (%d)\n", routs[k]);
-                return 1;
-            }
-        //set my_dest for every QP, getting ready to connect them.
-        my_dest[k].lid = context->portinfo.lid; //assigns lid to my dest
-        if (context->portinfo.link_layer != IBV_LINK_LAYER_ETHERNET &&
-                                !my_dest[k].lid) {
-            fprintf(stderr, "Couldn't get local LID\n");
-            return 1;
-        }
-        //set the gid to 0, we are in the same subnet.
-        memset(&my_dest[k].gid, 0, sizeof my_dest[k].gid); //zero the gid, we send in the same subnet
-        my_dest[k].qpn = ((*context).qp[k])->qp_num; //gets the qp number
-        my_dest[k].psn = lrand48() & 0xffffff; //randomizes the packet serial number
-        inet_ntop(AF_INET6, &my_dest[k].gid, gid, sizeof gid); //changes gid to text form
-        //printf("  local address:  LID 0x%04x, QPN 0x%06x, PSN 0x%06x, GID %s\n",
-         //      my_dest[k].lid, my_dest[k].qpn, my_dest[k].psn, gid);
-    }
-    //Get the remote dest for my QPs
-    rem_dest = pp_client_exch_dest(servername, port, my_dest); //if youre a client - exchange data with server
-    if (!rem_dest)
-            return 1; 
-    
-
-    for(int k = 0 ; k < NUM_SOCKETS; k = k + 1)
-    {
-      inet_ntop(AF_INET6, &rem_dest[k].gid, gid, sizeof gid);
-      //printf("  remote address: LID 0x%04x, QPN 0x%06x, PSN 0x%06x, GID %s\n",
-      //       rem_dest[k].lid, rem_dest[k].qpn, rem_dest[k].psn, gid);
-    }      
-    //now connect all the QPs to the server
-    for( int k = 0 ; k < NUM_SOCKETS; k = k+1)
-    {
-        if (pp_connect_ctx(context, ib_port, my_dest[k].psn, mtu, sl, &rem_dest[k],
-                        gidx,k))
-                return 1; //connect to the server
-
-    }
-   
     int ret;
     int ne, i;
     struct ibv_wc wc[NUM_SOCKETS];
@@ -768,7 +655,291 @@ int main(int argc, char *argv[])
         }
            
     }
+}
+int main(int argc, char *argv[])
+{
     
+    struct ibv_device      **dev_list;
+	struct ibv_device	*ib_dev;
+	struct pingpong_context *context;
+	struct pingpong_dest    my_dest[NUM_SOCKETS];
+	struct pingpong_dest    *rem_dest;
+	struct timeval           timer;
+	char                    *ib_devname = NULL;
+	char                    *servername = NULL;
+	unsigned int             port = 18515;
+	int                      ib_port = 1;
+	int             messageSize[NUM_SOCKETS];
+    int             numMessages[NUM_SOCKETS];
+    page_size = sysconf(_SC_PAGESIZE); //checks the page size used by the system
+    for (int i=0 ;i< NUM_SOCKETS; i = i+1)
+    {
+        messageSize[i] = page_size; //start with page_size messages
+        numMessages[i] = 100000; //start with 10000 iters per size of message
+    }
+	enum ibv_mtu		 mtu = IBV_MTU_1024;
+	unsigned int             rx_depth = 5000;
+	
+	int                      use_event = 0;
+	int                      routs[NUM_SOCKETS];
+	//int                      rcnt[NUM_SOCKETS];
+    int                      sendCount[NUM_SOCKETS];
+	int                      num_cq_events;//only one completion queue
+	int                      sl = 0;
+	int			 gidx = -1;
+	char			 gid[33];
+	//struct ts_params	 ts;
+
+	srand48(getpid() * time(NULL));
+
+    
+    //get input for the server ip and port
+    int portNum;
+    int numArgs = 3;
+    char* usageMessage = "usage %s Server IP port\n";
+	if (argc < numArgs) {
+       fprintf(stderr,usageMessage, argv[0]);
+       exit(0);
+    }
+    portNum = atoi(argv[numArgs - 1]);
+    port = portNum;
+    servername = strdupa(argv[1]);
+    
+    //get our beloved device
+    dev_list = ibv_get_device_list(NULL); //get devices available to this machine
+	if (!dev_list) {
+		perror("Failed to get IB devices list");
+		return 1;
+	}
+    ib_dev = *dev_list; //chooses the first device by default
+    if (!ib_dev) {
+        fprintf(stderr, "No IB devices found\n");
+        return 1;
+    }
+    //Create the context for this connection
+    //creates context on found device, registers memory of size.
+    context = pp_init_ctx(ib_dev, FINAL_MESSAGE_SIZE, rx_depth, ib_port, use_event); //use_event (decides if we wait blocking for completion)
+    if (!context)
+        return 1;
+    
+    if (pp_get_port_info(context->context, ib_port, &context->portinfo)) { //gets the port status and info (uses ibv_query_port)
+            fprintf(stderr, "Couldn't get port info\n");
+            return 1;
+        }
+    for ( int k = 0; k < NUM_SOCKETS ; k = k+1)
+    {
+        //Prepare to recieve messages. fill the recieve request queue of QP k
+        routs[k] = pp_post_recv(context, context->rx_depth,k); //post rx_depth recieve requests
+            if (routs[k] < context->rx_depth) {
+                fprintf(stderr, "Couldn't post receive (%d)\n", routs[k]);
+                return 1;
+            }
+        //set my_dest for every QP, getting ready to connect them.
+        my_dest[k].lid = context->portinfo.lid; //assigns lid to my dest
+        if (context->portinfo.link_layer != IBV_LINK_LAYER_ETHERNET &&
+                                !my_dest[k].lid) {
+            fprintf(stderr, "Couldn't get local LID\n");
+            return 1;
+        }
+        //set the gid to 0, we are in the same subnet.
+        memset(&my_dest[k].gid, 0, sizeof my_dest[k].gid); //zero the gid, we send in the same subnet
+        my_dest[k].qpn = ((*context).qp[k])->qp_num; //gets the qp number
+        my_dest[k].psn = lrand48() & 0xffffff; //randomizes the packet serial number
+        inet_ntop(AF_INET6, &my_dest[k].gid, gid, sizeof gid); //changes gid to text form
+        //printf("  local address:  LID 0x%04x, QPN 0x%06x, PSN 0x%06x, GID %s\n",
+         //      my_dest[k].lid, my_dest[k].qpn, my_dest[k].psn, gid);
+    }
+    //Get the remote dest for my QPs
+    rem_dest = pp_client_exch_dest(servername, port, my_dest); //if youre a client - exchange data with server
+    if (!rem_dest)
+            return 1; 
+    
+
+    for(int k = 0 ; k < NUM_SOCKETS; k = k + 1)
+    {
+      inet_ntop(AF_INET6, &rem_dest[k].gid, gid, sizeof gid);
+      //printf("  remote address: LID 0x%04x, QPN 0x%06x, PSN 0x%06x, GID %s\n",
+      //       rem_dest[k].lid, rem_dest[k].qpn, rem_dest[k].psn, gid);
+    }      
+    //now connect all the QPs to the server
+    for( int k = 0 ; k < NUM_SOCKETS; k = k+1)
+    {
+        if (pp_connect_ctx(context, ib_port, my_dest[k].psn, mtu, sl, &rem_dest[k],
+                        gidx,k))
+                return 1; //connect to the server
+
+    }
+    testParallelSockets(context);
+   /*
+    int ret;
+    int ne, i;
+    struct ibv_wc wc[NUM_SOCKETS];
+    /////////////////////////////////////////////////////
+    
+    ////framework for test
+    bool testDone[NUM_SOCKETS];
+    bool latencyDone[NUM_SOCKETS];
+    bool raiseNum[NUM_SOCKETS];
+    bool allDone = false;
+    bool gotAnswer[NUM_SOCKETS];
+    int packetCounter[NUM_SOCKETS];
+    int numPackets[NUM_SOCKETS];
+    //long lastTime[NUM_SOCKETS];
+    long thisTime[NUM_SOCKETS];
+    long startTime[NUM_SOCKETS];
+    long endTime[NUM_SOCKETS];
+    long latency[NUM_SOCKETS];
+    //int messageSize[NUM_SOCKETS];
+    int leftToSend[NUM_SOCKETS];
+    for(int i = 0;i<NUM_SOCKETS;i = i+1) //Initialize all the sockets for the program
+	{
+     
+        testDone[i] = false;
+        packetCounter[i] = 0;
+        numPackets[i] = numMessages[i];
+        //lastTime[i] = 1;
+        thisTime[i] = 100;
+        raiseNum[i] = false;
+        latency[i] = 0;
+        messageSize[i] = INITIAL_MESSAGE_SIZE;    
+        leftToSend[i] = INITIAL_MESSAGE_SIZE;
+        gotAnswer[i] = true;
+        latencyDone[i] = false;
+	}
+    //////
+    //sleep(5);
+    while(!allDone)
+    {
+    //////
+        allDone = true;
+        //send another round of packetsss
+        for ( int k = 0; k < NUM_SOCKETS; k = k+1)
+        {
+            if(testDone[k])
+            {
+                continue;
+            }
+            else 
+            {
+                allDone = false;
+            }
+            if(!gotAnswer[k])
+                continue;
+            if(packetCounter[k] == 0)
+            {
+                if (gettimeofday(&timer, NULL)) {
+                    perror("gettimeofday");
+                    return 1;
+                }
+                startTime[k] = (long) timer.tv_sec * 1000000 + (long)timer.tv_usec;
+            }
+            int message_type = REGULAR_MESSAGE;
+            if(packetCounter[k] == numPackets[k] - 1)
+            {
+                message_type = LAST_MESSAGE_FOR_TEST;
+            }
+            else if (packetCounter[k] == numPackets[k])
+            {
+                message_type = RAISE_SIZE;
+                messageSize[k] = 2 * messageSize[k];
+                if(messageSize[k] > FINAL_MESSAGE_SIZE)
+                {
+                    messageSize[k] = messageSize[k] / 2;
+                    testDone[k] = true;
+                    message_type = TEST_DONE;
+                }
+            }
+            else if (!latencyDone[k] && packetCounter[k] == NUM_PACKETS_WARMUP)
+            {
+                if (gettimeofday(&timer, NULL)) {
+                perror("gettimeofday");
+                return 1;
+                }
+                latency[k] = (long) timer.tv_sec * 1000000 + (long)timer.tv_usec;
+                message_type = LATENCY_TEST;
+             
+            }
+            
+            if (pp_post_send(context,k,message_type,messageSize[k])) { //TODO understand this
+                    fprintf(stderr, "Couldn't post sendoo\n");
+                    return 1;
+                }
+            gotAnswer[k] = false;
+        }
+        //do what needs to be done with work completes 
+        ne = ibv_poll_cq(pp_cq(context), NUM_SOCKETS, wc);
+        if (ne < 0) {
+            fprintf(stderr, "poll CQ failed %d\n", ne);
+            return 1;
+        }
+        for (i = 0; i < ne; ++i) {//does what needs to be done
+            if (wc[i].status != IBV_WC_SUCCESS) 
+            {
+                fprintf(stderr, "Failed status %d\n", wc[i].status);
+                return 1;
+            }
+            //find the QP index the message was recieved in
+            int qpNum;
+            for(qpNum = 0; qpNum < NUM_SOCKETS; qpNum = qpNum + 1)
+            {
+                if(my_dest[qpNum].qpn == wc[i].qp_num)
+                    break;
+            }
+            if ((int)wc[i].wr_id == PINGPONG_SEND_WRID)
+            {
+                packetCounter[qpNum] = packetCounter[qpNum] + 1;
+                gotAnswer[qpNum] = true;
+            }
+            else if((int)wc[i].wr_id == PINGPONG_RECV_WRID)//this is a recv operation completed.
+            {
+                //post recv
+                routs[qpNum] = routs[qpNum] -1 + pp_post_recv(context, 1,qpNum); //post rx_depth recieve requests
+                if (routs[qpNum] < context->rx_depth) {
+                    fprintf(stderr, "Couldn't post receive (%d)\n", routs[qpNum]);
+                    return 1;
+                }
+                     //do specific work according to protocol
+                int imm_data = htonl(wc[i].imm_data);
+                //printf("imm_data = %d\n",imm_data);
+                if(imm_data == LAST_MESSAGE_FOR_TEST)
+                {
+                    //TODO stop timer and print res 
+                    packetCounter[qpNum] = 0;
+                    if (gettimeofday(&timer, NULL)) {
+                        perror("gettimeofday");
+                        return 1;
+                    }
+                    int numSockets = NUM_SOCKETS;
+                    int numThreads = 1;
+                    endTime[qpNum] =(long) timer.tv_sec * 1000000 + (long)timer.tv_usec;
+                    double lastTime = (double)(endTime[qpNum] - startTime[qpNum]);
+                    //printf("qp: %d test was done, took %ld ms\n",qpNum,((double)(endTime[qpNum] - startTime[qpNum]))/1000.0);
+                    printf("%d %d %d %ld us %f msg/sec %f MB/sec\n",messageSize[qpNum],numSockets,numThreads,latency[qpNum], ((double) numPackets[qpNum] * 1000000.0 / ((double) lastTime)),(1000000.0*(double)messageSize[qpNum]*(double)numPackets[qpNum])/(1000000.0*(double)lastTime));
+
+                
+                }
+                
+                else if(imm_data == LATENCY_TEST)
+                {
+                    if (gettimeofday(&timer, NULL)) {
+                        perror("gettimeofday");
+                        return 1;
+                    }
+                    latency[qpNum] =(long) timer.tv_sec * 1000000 + (long)timer.tv_usec - latency[qpNum];
+                    latencyDone[qpNum] = true;
+
+                }
+            }
+            else
+            {
+                perror("failed send or recv ><");
+                return 1;
+            }
+        
+        }
+           
+    }
+    */
     ////////////////////////////////////////////////////
    
    	ibv_free_device_list(dev_list);
