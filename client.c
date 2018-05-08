@@ -156,7 +156,7 @@ static int pp_connect_ctx(struct pingpong_context *ctx, int port, int my_psn,
 	}
 
 	attr.qp_state	    = IBV_QPS_RTS;
-	attr.timeout	    = 14;
+	attr.timeout	    = 0;//14;// 0 is infinite wait
 	attr.retry_cnt	    = 7;
 	attr.rnr_retry	    = 7;
 	attr.sq_psn	    = my_psn;
