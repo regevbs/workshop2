@@ -601,11 +601,12 @@ int main(int argc, char *argv[])
     }
     sleep(5);
     int numSocketsToTest;
-    for (numSocketsToTest = 1;numSocketsToTest <= NUM_SOCKETS;numSocketsToTest ++)
+    for (numSocketsToTest = NUM_SOCKETS;numSocketsToTest <= NUM_SOCKETS;numSocketsToTest ++)
     {        
         printf("testing %d sockets now.\n",numSocketsToTest);
         if(numSocketsToTest == 2)
         {
+            printf("moved to socket %d\n",NUM_SOCKETS);
             numSocketsToTest = NUM_SOCKETS;
         }
         int ret;

@@ -620,11 +620,12 @@ int main(int argc, char *argv[])
     //////////////
     ////framework for test
     int numSocketsToTest;
-    for (numSocketsToTest = 1;numSocketsToTest <= NUM_SOCKETS;numSocketsToTest ++)
+    for (numSocketsToTest = NUM_SOCKETS;numSocketsToTest <= NUM_SOCKETS;numSocketsToTest ++)
     {        
         printf("testing %d sockets now.\n",numSocketsToTest);
         if(numSocketsToTest == 2)
         {
+            printf("moved to %d sockets\n",NUM_SOCKETS);
             numSocketsToTest = NUM_SOCKETS;
         }
         bool testDone[numSocketsToTest];
