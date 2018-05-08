@@ -510,7 +510,7 @@ int main(int argc, char *argv[])
 	struct pingpong_dest    *rem_dest;
 	struct timeval           timer;
 	char                    *ib_devname = NULL;
-	char                    *servername = NULL;
+	//char                    *servername = NULL;
 	unsigned int             port = 18515;
 	int                      ib_port = 1;
 	unsigned int             messageSize[NUM_SOCKETS];
@@ -539,15 +539,15 @@ int main(int argc, char *argv[])
     
     //get input for the server ip and port
     int portNum;
-    int numArgs = 3;
-    char* usageMessage = "usage %s Server IP port\n";
+    int numArgs = 2;
+    char* usageMessage = "usage %s port\n";
 	if (argc < numArgs) {
        fprintf(stderr,usageMessage, argv[0]);
        exit(0);
     }
     portNum = atoi(argv[numArgs - 1]);
     port = portNum;
-    servername = strdupa(argv[1]);
+    //servername = strdupa(argv[1]);
     
     //get our beloved device
     dev_list = ibv_get_device_list(NULL); //get devices available to this machine

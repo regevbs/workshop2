@@ -637,7 +637,7 @@ int main(int argc, char *argv[])
         latencyDone[i] = false;
 	}
     //////
-    sleep(5);
+    sleep(2);
     while(!allDone)
     {
     //////
