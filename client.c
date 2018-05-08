@@ -156,7 +156,7 @@ static int pp_connect_ctx(struct pingpong_context *ctx, int port, int my_psn,
 	}
 
 	attr.qp_state	    = IBV_QPS_RTS;
-	attr.timeout	    = 0;//14;// 0 is infinite wait
+	attr.timeout	    = 14;// 0 is infinite wait
 	attr.retry_cnt	    = 7;
 	attr.rnr_retry	    = 7;
 	attr.sq_psn	    = my_psn;
@@ -508,7 +508,7 @@ int main(int argc, char *argv[])
         numMessages[i] = 100000; //start with 10000 iters per size of message
     }
 	enum ibv_mtu		 mtu = IBV_MTU_1024;
-	unsigned int             rx_depth = 500;
+	unsigned int             rx_depth = 5000;
 	
 	int                      use_event = 0;
 	int                      routs[NUM_SOCKETS];
@@ -599,7 +599,7 @@ int main(int argc, char *argv[])
                 return 1; //connect to the server
 
     }
-    
+   
     int ret;
     int ne, i;
     struct ibv_wc wc[NUM_SOCKETS];
@@ -636,7 +636,7 @@ int main(int argc, char *argv[])
         latencyDone[i] = false;
 	}
     //////
-    sleep(5);
+    //sleep(5);
     while(!allDone)
     {
     //////
