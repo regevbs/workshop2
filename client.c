@@ -695,8 +695,8 @@ int main(int argc, char *argv[])
                     message_type = LATENCY_TEST;
                  
                 }
-                
-                if (int retval = pp_post_send(context,k,message_type,messageSize[k])) { //TODO understand this
+                int retval;
+                if (retval = pp_post_send(context,k,message_type,messageSize[k])) { //TODO understand this
                         fprintf(stderr, "Couldn't post sendoo %d error %d numSocket\n",retval,k);
                         return 1;
                     }
